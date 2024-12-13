@@ -1,99 +1,71 @@
 #include <bits/stdc++.h>
+#define MAXN 50010
 
 using namespace std;
 
-vector<int> cartas[50010];
-vector<int> adj[50010];
-int dp[50010][20];
-int nivel[50010];
+map<int, vector<int>> id;
+int n;
+int nivel[MAXN], pai[MAXN][20], tin[MAXN], tout[MAXN];
+int t;
+vector<int> grafo[MAXN];
+
+bool ancestral (int d, int a) {
+    if (tin[d]>=tin[a] && tout[a]>=tout[d]) return true;
+    else return false;
+}
 
 void dfs (int x) {
-    
-    for (int i=0; i<(int)adj[x].size(); i++) {
-        
-        int y = adj[x][i];
-        if (y==dp[x][0]) continue;
-        
-        dp[y][0]=x;
-        nivel[y]=nivel[x]+1;
-        dfs(y);
-        
+    tin[x] = ++t;
+    for (int i=0; i<(int)grafo[x].size(); i++) {
+        int adj = grafo[x][i];
+        if (nivel[adj] == 0) {
+            nivel[adj] = nivel[x]+1;
+            pai[adj][0] = x;
+            dfs(adj);
+        }
     }
-    
+    tout[x] = ++t;
+    return;
 }
 
 int lca (int u, int v) {
-    
-    if (nivel[u]>nivel[v]) swap (u, v);
-    
-    for (int i=19; i>=0; i--) {
-        
-        if (nivel[dp[v][i]]>=nivel[u]) v=dp[v][i];
-        
-    }
-    
     if (u==v) return u;
-    
+    if (ancestral(u, v)) return v;
+    if (ancestral(v, u)) return u;
+    if (nivel[v]>nivel[u]) swap(v, u);
     for (int i=19; i>=0; i--) {
-        
-        if (dp[v][i]!=dp[u][i]) {
-            
-            v=dp[v][i];
-            u=dp[u][i];
-            
-        }
-        
+        if (!ancestral(v, pai[u][i])) u = pai[u][i];
     }
-    
-    return dp[u][0];
-    
+    return pai[u][0];
 }
 
 int main () {
-    
-    int n;
-    long long int ans = 0;
     scanf ("%d", &n);
-    
     for (int i=1; i<=n; i++) {
-        
         int x;
         scanf ("%d", &x);
-        cartas[x].push_back(i);
-        
+        id[x].push_back(i);
     }
-    
     for (int i=1; i<n; i++) {
-        
         int a, b;
         scanf ("%d%d", &a, &b);
-        adj[a].push_back(b);
-        adj[b].push_back(a);
-        
+        grafo[a].push_back(b);
+        grafo[b].push_back(a);
     }
-    
-    nivel[1]=0;
+    nivel[1]=1;
+    pai[1][0]=1;
     dfs(1);
-    
-    for (int i=1; i<=19; i++) {
-        
+    for (int i=1; i<20; i++) {
         for (int j=1; j<=n; j++) {
-            
-            dp[j][i]=dp[dp[j][i-1]][i-1];
-            
+            pai[j][i] = pai[pai[j][i-1]][i-1];
         }
-        
     }
-    
+    long long int ans = 0;
     for (int i=1; i<=n/2; i++) {
-        
-        int l = lca(cartas[i][0], cartas[i][1]);
-        ans += (nivel[cartas[i][0]]-nivel[l]) + (nivel[cartas[i][1]]-nivel[l]);
-        
+        int u = id[i][0], v = id[i][1];
+        int x = lca(u, v);
+        ans += nivel[u]+nivel[v]-2*nivel[x];
     }
-    
     printf ("%lld\n", ans);
-    
     return 0;
-    
 }

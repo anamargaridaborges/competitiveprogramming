@@ -1,11 +1,11 @@
 #include <bits/stdc++.h>
 #define MAXN 1010
 #define MAXX 100010
-
+ 
 using namespace std;
-
+ 
 int dp[MAXN][MAXX];
-
+ 
 int main () {
     int n, x;
     int p[MAXN], v[MAXN];

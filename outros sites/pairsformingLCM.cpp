@@ -1,0 +1,119 @@
+#include <bits/stdc++.h>
+#define int long long
+
+using namespace std;
+
+int gcd(int a, int b) {
+    while (b) {
+        a %= b;
+        swap(a, b);
+    }
+    return a;
+}
+
+int mul(int a, int b, int m) {
+	int ret = a*b - (int)((long double)1/m*a*b+0.5)*m;
+	return ret < 0 ? ret+m : ret;
+}
+
+int pow(int x, int y, int m) {
+	if (!y) return 1;
+	int ans = pow(mul(x, x, m), y/2, m);
+	return y%2 ? mul(x, ans, m) : ans;
+}
+
+bool prime(int n) {
+	if (n < 2) return 0;
+	if (n <= 3) return 1;
+	if (n % 2 == 0) return 0;
+
+	int r = __builtin_ctzll(n - 1), d = n >> r;
+	for (int a : {2, 325, 9375, 28178, 450775, 9780504, 1795265022}) {
+		int x = pow(a, d, n);
+		if (x == 1 or x == n - 1 or a % n == 0) continue;
+		
+		for (int j = 0; j < r - 1; j++) {
+			x = mul(x, x, n);
+			if (x == n - 1) break;
+		}
+		if (x != n - 1) return 0;
+	}
+	return 1;
+}
+
+int rho(int n) {
+	if (n == 1 or prime(n)) return n;
+	auto f = [n](int x) {return mul(x, x, n) + 1;};
+
+	int x = 0, y = 0, t = 30, prd = 2, x0 = 1, q;
+	while ((t % 40 != 0) || (gcd(prd, n) == 1)) {
+		if (x==y) x = ++x0, y = f(x);
+		q = mul(prd, abs(x-y), n);
+		if (q != 0) prd = q;
+		x = f(x), y = f(f(y)), t++;
+	}
+	return gcd(prd, n);
+}
+
+vector<int> fact(int n) {
+	if (n == 1) return {};
+	if (prime(n)) return {n};
+	int d = rho(n);
+	vector<int> l = fact(d), r = fact(n / d);
+	l.insert(l.end(), r.begin(), r.end());
+	return l;
+}
+
+int rec (int idx, int mult, vector<pair<int, int>>& vet, int tam, int usados) {
+    if (idx == tam) {
+        cout<<mult<<endl;
+        if (usados != tam && usados != 0) return mult;
+        else return 0;
+    }
+    int aux = (vet[idx].first == 1 ? 0 : rec(idx+1, mult*(vet[idx].first - 1), vet, tam, usados + 1));
+    return aux + rec(idx+1, mult, vet, tam, usados);
+}
+
+int pot2[100];
+int suf[1000010];
+
+int32_t main () {
+    int t;
+    cin>>t;
+    pot2[0] = 1;
+    for (int i=1; i<64; i++) pot2[i] = pot2[i-1] * 2;
+    for (int j=1; j<=t; j++) {
+        int n;
+        cin>>n;
+        vector<int> aux = fact(n);
+        vector<pair<int, int>> fat;
+        map<int, int> computado;
+        for (int p : aux) {
+            if (computado.find(p) != computado.end()) continue;
+            computado[p] = 1;
+            int n_div = n;
+            int pot = 0;
+            while(n_div % p == 0) {
+                n_div = n_div / p;
+                pot++;
+            }
+            fat.push_back({pot, p});
+        }
+        sort(fat.begin(), fat.end());
+        reverse(fat.begin(), fat.end());
+        int tam = (int)fat.size();
+        cout<<rec(0, 1, fat, tam, 0)<<endl;
+        suf[(int)fat.size()] = 0;
+        int ans = 1;
+        for (int i=(int)fat.size() - 1; i>=0; i--) {
+            suf[i] = suf[i+1] + fat[i].first;
+            ans = ans * (fat[i].first + 1);
+        }
+        for (int i=0; i<(int)fat.size(); i++) {
+            int soma_at = (tam-i-2 >= 0 ? pot2[tam-i-2] : 0) * ((tam-i-3 >= 0 ? pot2[tam-i-3] : 0) * suf[i+1] + (tam-i-2 >= 0 ? pot2[tam-i-2] : 0) * fat[i].first);
+            ans += soma_at;
+        }
+        cout<<"Case "<<j<<": "<<ans<<endl;
+    }
+    return 0;
+}
